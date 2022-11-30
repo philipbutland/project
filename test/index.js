@@ -291,7 +291,7 @@ function Intro() {
         break;
       case 13: // return
         getAngle();
-        strikeBall(10);
+        // strikeBall(10);
     }
   });
 }
@@ -362,7 +362,7 @@ function EndGame(string1, string2, string3){
 }
 
 
-function getAngle(){
+function getAngle() {
   const ctx = myBilliardTable.context;
   ctx.clearRect(messageLeft, messageTop, messageWidth, speedMessageHeight);
 
@@ -373,30 +373,56 @@ function getAngle(){
   ctx.font = "18px Arial";
   ctx.fillStyle = "black";
   ctx.textAlign = "center";
-  ctx.fillText(`Hover over the yellow area to find an angle`, messageCentre, messageTop + 50);
+  ctx.fillText(`Hover over the yellow area to find an angle`, messageCentre, messageTop + 50
+  );
 
   const x1 = messageCentre;
   const y1 = messageTop + 100;
   const r1 = 150;
-  const angleStart =  (-1 * Math.PI) / 180;
-  const angleEnd = (181 * Math.PI) / 180;
+  const angleStart = (1 * Math.PI) / 180;
+  const angleEnd = (179 * Math.PI) / 180;
 
   ctx.fillStyle = "yellow";
-
   ctx.beginPath();
   ctx.moveTo(x1, y1);
-
   ctx.arc(x1, y1, r1, angleStart, angleEnd);
-  
   ctx.fill();
   ctx.closePath();
 
   document.addEventListener("mousemove", (event) => {
+    let xMouse = event.clientX;
+    let yMouse = event.clientY + speedMessageHeight;
 
-    // console.log(MouseEvent.clientX)
-    // console.log(MouseEvent.clientY)
+    if ((x1 - xMouse) ** 2 + (y1 - yMouse) ** 2 < r1 ** 2) {
+      let xyAngle = Math.atan2(yMouse - y1, xMouse - x1);
+      let angleDegrees = (xyAngle * (180 / Math.PI));
+
+      if (xyAngle >= angleStart && xyAngle <= angleEnd) {
+
+        const ctx = myBilliardTable.context;
+
+        ctx.clearRect(x1-r1, y1+r1, 2*r1, r1);
+
+        ctx.fillStyle = "yellow";
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.arc(x1, y1, r1, angleStart, angleEnd);
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(xMouse, yMouse);
+        ctx.stroke();
+
+        ctx.fillStyle = "red";
+        const angleMessage = messageTop + 300
+        const messageBorder = 19
+        ctx.clearRect(messageLeft+messageBorder, angleMessage-25, messageWidth-(2*messageBorder), 50);
+        ctx.fillText(`Angle: ${angleDegrees}`, messageCentre, angleMessage);
+        
+      }
+    }
+    
   });
-
-
-
 }
