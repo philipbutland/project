@@ -19,7 +19,6 @@ const myBilliardTable = {
   },
 
   stop: function () {
-
     clearInterval(newBall.interval);
   },
 
@@ -88,11 +87,20 @@ const myBilliardTable = {
       if (middlePocket){
         ctx.clearRect(tableXLeft, 0, tableWidth, scoreCard);
         Score = Score + 10;
-        string3 = "including 10 points bonus for middle pocket"
-      EndGame("Congratulations, you have won", `with ${Score} points`, string3);
+        string3 = "including 10 points bonus for middle pocket";
+        EndGame("Congratulations, you have won", `with ${Score} points`, string3);
+        ctx.font = "18px Arial";
+        ctx.fillStyle = "purple";
       }
 
-      gameOn = false;
+      if (Score >= TopScore) {
+        ctx.fillText("This is the new top score", messageCentre, ScoreCardTop + 300);
+        TopScore = Score;
+      }
+      else {
+        ctx.fillText("The top score is still ${TopScore}", messageCentre, ScoreCardTop + 300);         
+      }
+    
       myBilliardTable.stop();
     } else {
       EndGame("Sorry, you lost", " ", " ")
@@ -223,10 +231,11 @@ const messageCentre = messageLeft + messageWidth / 2;
 const messageBorder = 20;
 
 const ScoreCardTop = 200;
-gameOn = true;
 
 let Score = 100;
 let Speed = 1;
+let TopScore = 0;
+let xyAngle = 0;
 
 myBilliardTable.start();
 myBilliardTable.clear();
@@ -234,19 +243,17 @@ Intro();
 tableUpdate();
 
 const newBall = new billiardBall("white");
+setInterval(newBall, 20000)
 
 function strikeBall(angle) {
   document.addEventListener("click", (event) => {
-    if (gameOn) {
-      myBilliardTable.clear();
+  myBilliardTable.clear();
     
-      if (Score <= 0) {
-        myBilliardTable.gameOver(false, false);
-      } else {
-          newBall.update(angle);
-         }
-    }
-
+  if (Score <= 0) {
+    myBilliardTable.gameOver(false, false);
+  } else {
+    newBall.update(angle);
+  }
   });
 }
 
@@ -291,7 +298,8 @@ function Intro() {
         break;
       case 13: // return
         getAngle();
-        strikeBall(10);
+        console.log("**", xyAngle)
+        strikeBall(xyAngle);
     }
   });
 }
@@ -318,12 +326,7 @@ function speedBlock(Right) {
   const ctx = myBilliardTable.context;
 
   ctx.fillStyle = "red";
-  ctx.clearRect(
-    messageLeft + messageBorder,
-    messageTop + 225,
-    messageWidth - 2 * messageBorder,
-    50
-  );
+  ctx.clearRect(messageLeft + messageBorder, messageTop + 225, messageWidth - 2 * messageBorder, 50);
   ctx.fillText(`Current Speed: ${Speed}`, messageCentre, messageTop + 250);
 
   const speedWidth = 30;
@@ -357,12 +360,10 @@ function EndGame(string1, string2, string3){
   ctx.font = "18px Arial";
   ctx.fillStyle = "blue";
   ctx.fillText(string3, messageCentre, ScoreCardTop + 200);
-
-
 }
 
 
-function getAngle(){
+function getAngle() {
   const ctx = myBilliardTable.context;
   ctx.clearRect(messageLeft, messageTop, messageWidth, speedMessageHeight);
 
@@ -374,29 +375,59 @@ function getAngle(){
   ctx.fillStyle = "black";
   ctx.textAlign = "center";
   ctx.fillText(`Hover over the yellow area to find an angle`, messageCentre, messageTop + 50);
+  ctx.fillText(`Click your mouse to proceed`, messageCentre, messageTop + 80);
+
 
   const x1 = messageCentre;
   const y1 = messageTop + 100;
   const r1 = 150;
-  const angleStart =  (-1 * Math.PI) / 180;
-  const angleEnd = (181 * Math.PI) / 180;
+  const angleStart = (1 * Math.PI) / 180;
+  const angleEnd = (179 * Math.PI) / 180;
 
   ctx.fillStyle = "yellow";
-
   ctx.beginPath();
-  ctx.moveTo(x1, y1);
-
+  ctx.moveTo(x1, y1)
   ctx.arc(x1, y1, r1, angleStart, angleEnd);
-  
   ctx.fill();
   ctx.closePath();
 
   document.addEventListener("mousemove", (event) => {
+    let xMouse = event.clientX;
+    let yMouse = event.clientY + speedMessageHeight;
 
-    // console.log(MouseEvent.clientX)
-    // console.log(MouseEvent.clientY)
+    if ((x1 - xMouse) ** 2 + (y1 - yMouse) ** 2 < r1 ** 2) {
+      xyAngle = Math.atan2(yMouse - y1, xMouse - x1);
+      let angleDegrees = (xyAngle * (180 / Math.PI));
+
+      if (xyAngle >= angleStart && xyAngle <= angleEnd) {
+
+        const ctx = myBilliardTable.context;
+
+        ctx.clearRect(x1-r1, y1-10, 2*r1, r1+10);
+
+        ctx.fillStyle = "yellow";
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.arc(x1, y1, r1, angleStart, angleEnd);
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(xMouse, yMouse);
+        ctx.stroke();
+
+        ctx.fillStyle = "red";
+        const angleMessage = messageTop + 300
+        const messageBorder = 19
+        ctx.clearRect(messageLeft+messageBorder, angleMessage-25, messageWidth-(2*messageBorder), 50);
+        ctx.fillText(`Angle: ${angleDegrees}`, messageCentre, angleMessage);  
+      }
+    }
+
+
+    console.log("!!", xyAngle)
+
+    
   });
-
-
-
 }
