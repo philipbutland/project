@@ -1,3 +1,8 @@
+
+
+
+
+
 console.log("Online Billiards");
 console.log("\n");
 
@@ -13,13 +18,14 @@ const myBilliardTable = {
     this.canvas.height = c.height;
 
     document.body.insertBefore(this.canvas, document.body.childNodes[0]); // call updateGameArea() every 20 milliseconds
-    this.interval = setInterval(tableUpdate, 2000); 
 
     const scoreCard = 100;
   },
 
   stop: function () {
+    console.log("***   STOP  ****");
     clearInterval(newBall.interval);
+    clearInterval(this.interval)
   },
 
   clear: function () {
@@ -82,30 +88,30 @@ const myBilliardTable = {
     if (won) {
       const ctx = myBilliardTable.context;
 
-      let string3 = " ";
+      ctx.font = "18px Arial";
+      ctx.fillStyle = "purple";
 
       if (middlePocket){
-        ctx.clearRect(tableXLeft, 0, tableWidth, scoreCard);
         Score = Score + 10;
-        string3 = "including 10 points bonus for middle pocket";
-        EndGame("Congratulations, you have won", `with ${Score} points`, string3);
+        ctx.clearRect(tableXLeft, 0, tableWidth, scoreCard);
         ctx.font = "18px Arial";
-        ctx.fillStyle = "purple";
+        ctx.fillStyle = "blue";
+        ctx.fillText("including 10 points bonus for middle pocket", messageCentre, ScoreCardTop + 200);
       }
 
       if (Score >= TopScore) {
-        ctx.fillText("This is the new top score", messageCentre, ScoreCardTop + 300);
+        ctx.fillText("This is the new top score", messageCentre, ScoreCardTop + 250);
         TopScore = Score;
       }
       else {
         ctx.fillText("The top score is still ${TopScore}", messageCentre, ScoreCardTop + 300);         
       }
-    
-      myBilliardTable.stop();
-    } else {
-      EndGame("Sorry, you lost", " ", " ")
-      myBilliardTable.stop();
+      EndGame("Congratulations, you have won", `with ${Score} points`);
+
+        } else {
+      EndGame("Sorry, you lost", " ")
     }
+    myBilliardTable.stop();
   },
 };
 
@@ -136,25 +142,25 @@ class billiardBall {
       ctx.fillStyle = this.color;
 
       if (
-        this.Newx - ballRadius <= tableXLeft && this.Newy - ballRadius <= tableYTop
+        (this.Newx - ballRadius <= tableXLeft + pocketRadius) && (this.Newy - ballRadius <= tableYTop + pocketRadius)
       ) {
         myBilliardTable.pocket(tableXLeft - borderLineWidth, tableYTop - borderLineWidth, "red", Math.PI, 2 * Math.PI, true, 0.5 * Math.PI, Math.PI);
         myBilliardTable.gameOver(true, false);
         return;
       } else if (
-        this.Newx + ballRadius >= tableXRight && this.Newy - ballRadius <= tableYTop
+        ((this.Newx + ballRadius) >= tableXRight - pocketRadius) && ((this.Newy - ballRadius) <= tableYTop + pocketRadius)
       ) {
         myBilliardTable.pocket(tableXRight + borderLineWidth, tableYTop - borderLineWidth, "red", Math.PI, 2 * Math.PI, true, 0, 0.5 * Math.PI);
         myBilliardTable.gameOver(true, false);
         return;
       } else if (
-        this.Newx - ballRadius <= tableXLeft && this.Newy + ballRadius >= tableYBottom
+        ((this.Newx - ballRadius) <= tableXLeft + pocketRadius) && ((this.Newy + ballRadius) >= tableYBottom - pocketRadius)
       ) {
         myBilliardTable.pocket(tableXLeft - borderLineWidth, tableYBottom + borderLineWidth, "red", 0, Math.PI, true, Math.PI, 1.5 * Math.PI);
         myBilliardTable.gameOver(true, false);
         return;
       } else if (
-        this.Newx + ballRadius >= tableXRight && this.Newy + ballRadius >= tableYBottom
+        ((this.Newx + ballRadius) >= tableXRight - pocketRadius) && ((this.Newy + ballRadius) >= tableYBottom - pocketRadius)
       ) {
         myBilliardTable.pocket(tableXRight + borderLineWidth, tableYBottom + borderLineWidth, "red", 0, Math.PI, true, 1.5 * Math.PI, 0);
         myBilliardTable.gameOver(true, false);
@@ -192,7 +198,7 @@ class billiardBall {
       ctx.fillstyle = this.color;
       ctx.fill();
       ctx.closePath();
-    }, 1);
+    }, (11-Speed)/10);
   }
 }
 
@@ -232,77 +238,89 @@ const messageBorder = 20;
 
 const ScoreCardTop = 200;
 
-let Score = 100;
-let Speed = 1;
+const newBall = new billiardBall("white");
+
+
+let Score = 9;
+let Speed = 0;
 let TopScore = 0;
 let xyAngle = 0;
+let angleDegrees = 0;
 
-myBilliardTable.start();
-myBilliardTable.clear();
-Intro();
-tableUpdate();
+restart();
 
-const newBall = new billiardBall("white");
-setInterval(newBall, 20000)
-
-function strikeBall(angle) {
-  document.addEventListener("click", (event) => {
+function restart() {
+  
+  Score = 100;
+  Speed = 1;
+  TopScore = 0;
+  xyAngle = 0;
+  angleDegrees = 0;
+  
+  myBilliardTable.start();
   myBilliardTable.clear();
+  
+  const ctx = myBilliardTable.context;
+  ctx.fillStyle = "white";
+  
+  ctx.beginPath();
+  ctx.arc(tableXMiddle, tableYBaulk + ballRadius, ballRadius, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.closePath();
+  
+  Intro();
+  tableUpdate();
+}
     
-  if (Score <= 0) {
-    myBilliardTable.gameOver(false, false);
-  } else {
-    newBall.update(angle);
+  function tableUpdate() {
+    const ctx = myBilliardTable.context;
+    ctx.font = "18px serif";
+    ctx.fillStyle = "black";
+    ctx.fillText(`Score: ${Score}`, tableXMiddle, 50);
   }
-  });
+  
+  function Intro() {
+    const ctx = myBilliardTable.context;
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = messageBorderWidth;
+    roundRect(messageLeft, messageTop, messageWidth, speedMessageHeight, 20);
+  
+    ctx.font = "18px Arial";
+    ctx.fillStyle = "black";
+    ctx.textAlign = "center";
+    ctx.fillText(`Activate Num Lock and use the`, messageCentre, messageTop + 50);
+    ctx.fillText(`Up and Down Arrows on the right keypad`, messageCentre, messageTop + 80);
+    ctx.fillText(`to select a Speed between 1 and 10`, messageCentre, messageTop + 110);
+  
+    ctx.fillText(`Press <RETURN> to continue`, messageCentre, messageTop + 150);
+  
+    speedBlock(true);
+  
+    document.addEventListener("keydown", (event) => {
+      switch (event.keyCode) {
+        case 100: // left arrow
+          if (Speed > 1) {
+            Speed -= 1;
+            speedBlock(false);
+          } else {   //  hit left barrier - no change
+          }
+          break;
+        case 102: // right arrow
+          if (Speed < MaxSpeed) {
+            Speed += 1;
+            speedBlock(true);
+          } else {  //hit right barrier - no change
+          }
+          break;
+        case 13: // return
+          getAngle();
+      }
+    });
+  
 }
 
-function tableUpdate() {
-  const ctx = myBilliardTable.context;
-  ctx.font = "18px serif";
-  ctx.fillStyle = "black";
-  ctx.fillText(`Score: ${Score}`, tableXMiddle, 50);
-}
 
-function Intro() {
-  const ctx = myBilliardTable.context;
-  ctx.strokeStyle = "red";
-  ctx.lineWidth = messageBorderWidth;
-  roundRect(messageLeft, messageTop, messageWidth, speedMessageHeight, 20);
 
-  ctx.font = "18px Arial";
-  ctx.fillStyle = "black";
-  ctx.textAlign = "center";
-  ctx.fillText(`Use the Left and Right Arrows`, messageCentre, messageTop + 50);
-  ctx.fillText(`to select a Speed between 1 and 10`, messageCentre, messageTop + 80);
-
-  ctx.fillText(`Press <RETURN> to continue`, messageCentre, messageTop + 150);
-
-  speedBlock(true);
-
-  document.addEventListener("keydown", (event) => {
-    switch (event.keyCode) {
-      case 37: // left arrow
-        if (Speed > 1) {
-          Speed -= 1;
-          speedBlock(false);
-        } else {   //  hit left barrier - no change
-        }
-        break;
-      case 39: // right arrow
-        if (Speed < MaxSpeed) {
-          Speed += 1;
-          speedBlock(true);
-        } else {  //hit right barrier - no change
-        }
-        break;
-      case 13: // return
-        getAngle();
-        console.log("**", xyAngle)
-        strikeBall(xyAngle);
-    }
-  });
-}
 
 function roundRect(x, y, w, h, radius) {
   const ctx = myBilliardTable.context;
@@ -323,29 +341,30 @@ function roundRect(x, y, w, h, radius) {
 }
 
 function speedBlock(Right) {
-  const ctx = myBilliardTable.context;
-
-  ctx.fillStyle = "red";
-  ctx.clearRect(messageLeft + messageBorder, messageTop + 225, messageWidth - 2 * messageBorder, 50);
-  ctx.fillText(`Current Speed: ${Speed}`, messageCentre, messageTop + 250);
-
-  const speedWidth = 30;
-  const speedHeight = 80;
-  ctx.globalAlpha = Speed * 0.1;
-
-
-  if (Right) {
-    let speedLeft = messageLeft + (Speed * speedWidth);
-    ctx.fillRect(speedLeft, messageTop + 300, speedWidth, speedHeight);
-  } else {
-    let speedLeft = messageLeft + ((Speed+1) * speedWidth);
-    ctx.clearRect(speedLeft, messageTop + 300, speedWidth, speedHeight);
-  }
-
-  ctx.globalAlpha = 1.0;
+    const ctx = myBilliardTable.context;
+  
+    ctx.fillStyle = "red";
+    ctx.clearRect(messageLeft + messageBorder, messageTop + 225, messageWidth - 2 * messageBorder, 50);
+    ctx.fillText(`Current Speed: ${Speed}`, messageCentre, messageTop + 250);
+  
+    const speedWidth = 30;
+    const speedHeight = 80;
+    ctx.globalAlpha = Speed * 0.1;
+  
+  
+    if (Right) {
+      let speedLeft = messageLeft + (Speed * speedWidth);
+      ctx.fillRect(speedLeft, messageTop + 300, speedWidth, speedHeight);
+    } else {
+      let speedLeft = messageLeft + ((Speed+1) * speedWidth);
+      ctx.clearRect(speedLeft, messageTop + 300, speedWidth, speedHeight);
+    }
+  
+    ctx.globalAlpha = 1.0;
 }
 
-function EndGame(string1, string2, string3){
+
+function EndGame(string1, string2){
   const ctx = myBilliardTable.context;
   ctx.strokeStyle = "blue";
   ctx.lineWidth = messageBorderWidth;
@@ -356,10 +375,6 @@ function EndGame(string1, string2, string3){
   ctx.textAlign = "center";
   ctx.fillText(string1, messageCentre, ScoreCardTop + 50);
   ctx.fillText(string2, messageCentre, ScoreCardTop + 100);
-
-  ctx.font = "18px Arial";
-  ctx.fillStyle = "blue";
-  ctx.fillText(string3, messageCentre, ScoreCardTop + 200);
 }
 
 
@@ -374,60 +389,48 @@ function getAngle() {
   ctx.font = "18px Arial";
   ctx.fillStyle = "black";
   ctx.textAlign = "center";
-  ctx.fillText(`Hover over the yellow area to find an angle`, messageCentre, messageTop + 50);
-  ctx.fillText(`Click your mouse to proceed`, messageCentre, messageTop + 80);
 
 
-  const x1 = messageCentre;
-  const y1 = messageTop + 100;
-  const r1 = 150;
-  const angleStart = (1 * Math.PI) / 180;
-  const angleEnd = (179 * Math.PI) / 180;
+  const maxAngle=89
+  const minAngle=-89
+  const angleMessage = messageTop + 300
 
-  ctx.fillStyle = "yellow";
-  ctx.beginPath();
-  ctx.moveTo(x1, y1)
-  ctx.arc(x1, y1, r1, angleStart, angleEnd);
-  ctx.fill();
-  ctx.closePath();
+//   ctx.filltext("Activate Num Lock and us the", messageCentre, messageTop + 50)
+  ctx.fillText(`Activate Num Lock and use the`, messageCentre, messageTop + 50);
+  ctx.fillText(`Up and Down Arrows on the right keypad`, messageCentre, messageTop + 80);
+  ctx.fillText(`to select an angle between -89° and 89°`, messageCentre, messageTop + 110);
 
-  document.addEventListener("mousemove", (event) => {
-    let xMouse = event.clientX;
-    let yMouse = event.clientY + speedMessageHeight;
+  ctx.fillText("Press <RETURN> to continue", messageCentre, messageTop + 150)
 
-    if ((x1 - xMouse) ** 2 + (y1 - yMouse) ** 2 < r1 ** 2) {
-      xyAngle = Math.atan2(yMouse - y1, xMouse - x1);
-      let angleDegrees = (xyAngle * (180 / Math.PI));
+  ctx.font = "36px Arial";
+  ctx.fillText(`Angle: ${angleDegrees}`, messageCentre, angleMessage);
 
-      if (xyAngle >= angleStart && xyAngle <= angleEnd) {
+  document.addEventListener("keydown", (event) => {
+    ctx.font = "36px Arial";
 
-        const ctx = myBilliardTable.context;
+    switch (event.keyCode) {
+      case 98: // down arrow
+        if (angleDegrees > minAngle) {
+          angleDegrees -= 1;
+          ctx.clearRect(messageLeft+messageBorder, angleMessage-25, messageWidth-(2*messageBorder), 50)
+          ctx.fillText(`Angle: ${angleDegrees}`, messageCentre, angleMessage);
 
-        ctx.clearRect(x1-r1, y1-10, 2*r1, r1+10);
-
-        ctx.fillStyle = "yellow";
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.arc(x1, y1, r1, angleStart, angleEnd);
-        ctx.fill();
-        ctx.closePath();
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(xMouse, yMouse);
-        ctx.stroke();
-
-        ctx.fillStyle = "red";
-        const angleMessage = messageTop + 300
-        const messageBorder = 19
-        ctx.clearRect(messageLeft+messageBorder, angleMessage-25, messageWidth-(2*messageBorder), 50);
-        ctx.fillText(`Angle: ${angleDegrees}`, messageCentre, angleMessage);  
-      }
+        }
+        break;
+      case 104: // up arrow    
+        if (angleDegrees < maxAngle) {
+          angleDegrees += 1;
+          ctx.clearRect(messageLeft+messageBorder, angleMessage-25, messageWidth-(2*messageBorder), 50)
+          ctx.fillText(`Angle: ${angleDegrees}`, messageCentre, angleMessage);
+        }
+        break;
+      case 13: // return
+        myBilliardTable.clear();
+        if (Score <= 0) {
+          myBilliardTable.gameOver(false, false);
+        } else {
+          newBall.update(angleDegrees);
+        }    
     }
-
-
-    console.log("!!", xyAngle)
-
-    
   });
 }
